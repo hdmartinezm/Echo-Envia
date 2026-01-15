@@ -2,7 +2,7 @@
 
 project_name = "envia"
 environment  = "dev"
-location     = "East US"
+location     = "West US 2"  # Mejor disponibilidad de servicios
 
 tags = {
   Environment = "Development"
@@ -24,7 +24,7 @@ app_service_plan_sku = {
   capacity = 1
 }
 
-app_service_instances = 2
+app_service_instances = 1  # Solo 1 instancia para dev
 
 # Database - Configuración básica para dev (sin VNet integration)
 mysql_sku_name                 = "B_Standard_B1s"
@@ -38,8 +38,8 @@ mysql_database_name            = "enviadb"
 
 # Application Gateway - Configuración básica
 app_gateway_sku = {
-  name     = "WAF_v2"
-  tier     = "WAF_v2"
+  name     = "Standard_v2"
+  tier     = "Standard_v2"
   capacity = 1
 }
 

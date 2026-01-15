@@ -45,6 +45,8 @@ resource "azurerm_key_vault_secret" "mysql_password" {
   value        = var.mysql_admin_password
   key_vault_id = azurerm_key_vault.main.id
   tags         = var.tags
+
+  depends_on = [time_sleep.wait_for_kv_policies]
 }
 
 # Secreto: MySQL Admin Username
@@ -53,6 +55,8 @@ resource "azurerm_key_vault_secret" "mysql_username" {
   value        = var.mysql_admin_username
   key_vault_id = azurerm_key_vault.main.id
   tags         = var.tags
+
+  depends_on = [time_sleep.wait_for_kv_policies]
 }
 
 # User Assigned Managed Identity para App Services
@@ -73,4 +77,11 @@ resource "azurerm_key_vault_access_policy" "app_service" {
     "Get",
     "List"
   ]
+}
+
+# Delay para permitir propagación de access policies
+resource "time_sleep" "wait_for_kv_policies" {
+  depends_on = [azurerm_key_vault.main]
+  
+  create_duration = "30s"
 }
