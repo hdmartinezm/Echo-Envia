@@ -155,7 +155,26 @@ terraform {
 }
 ```
 
-## Paso 5: Probar el Workflow
+## Paso 5: Registrar Resource Providers en Azure
+
+Los Resource Providers deben estar registrados en tu suscripción antes del primer despliegue:
+
+```bash
+# Opción 1: Usar el script automatizado
+./scripts/register-azure-providers.sh
+
+# Opción 2: Registrar manualmente
+az provider register --namespace Microsoft.Network --wait
+az provider register --namespace Microsoft.Web --wait
+az provider register --namespace Microsoft.DBforMySQL --wait
+az provider register --namespace Microsoft.Storage --wait
+az provider register --namespace Microsoft.KeyVault --wait
+az provider register --namespace Microsoft.Compute --wait
+```
+
+**Nota:** Este paso solo es necesario una vez por suscripción.
+
+## Paso 6: Probar el Workflow
 
 ### Opción 1: Push a main
 ```bash
