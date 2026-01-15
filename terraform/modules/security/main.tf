@@ -11,21 +11,32 @@ resource "azurerm_key_vault" "main" {
   soft_delete_retention_days = 7
   purge_protection_enabled   = var.environment == "prod" ? true : false
 
-  enable_rbac_authorization = true
+  # Usar access policies en lugar de RBAC para evitar problemas de permisos
+  enable_rbac_authorization = false
+
+  # Access policy para el Service Principal actual
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    secret_permissions = [
+      "Get",
+      "List",
+      "Set",
+      "Delete",
+      "Recover",
+      "Backup",
+      "Restore",
+      "Purge"
+    ]
+  }
 
   network_acls {
-    default_action = "Deny"
+    default_action = "Allow"  # Cambiar a Allow para dev
     bypass         = "AzureServices"
   }
 
   tags = var.tags
-}
-
-# Role assignment para el usuario actual (para poder crear secretos)
-resource "azurerm_role_assignment" "current_user_kv_admin" {
-  scope                = azurerm_key_vault.main.id
-  role_definition_name = "Key Vault Administrator"
-  principal_id         = data.azurerm_client_config.current.object_id
 }
 
 # Secreto: MySQL Admin Password
@@ -34,8 +45,6 @@ resource "azurerm_key_vault_secret" "mysql_password" {
   value        = var.mysql_admin_password
   key_vault_id = azurerm_key_vault.main.id
   tags         = var.tags
-
-  depends_on = [azurerm_role_assignment.current_user_kv_admin]
 }
 
 # Secreto: MySQL Admin Username
@@ -44,8 +53,6 @@ resource "azurerm_key_vault_secret" "mysql_username" {
   value        = var.mysql_admin_username
   key_vault_id = azurerm_key_vault.main.id
   tags         = var.tags
-
-  depends_on = [azurerm_role_assignment.current_user_kv_admin]
 }
 
 # User Assigned Managed Identity para App Services
@@ -56,9 +63,14 @@ resource "azurerm_user_assigned_identity" "app_service" {
   tags                = var.tags
 }
 
-# Role assignment para que App Service pueda leer secretos
-resource "azurerm_role_assignment" "app_service_kv_reader" {
-  scope                = azurerm_key_vault.main.id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_user_assigned_identity.app_service.principal_id
+# Access policy para que App Service pueda leer secretos
+resource "azurerm_key_vault_access_policy" "app_service" {
+  key_vault_id = azurerm_key_vault.main.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_user_assigned_identity.app_service.principal_id
+
+  secret_permissions = [
+    "Get",
+    "List"
+  ]
 }

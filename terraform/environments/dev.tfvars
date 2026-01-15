@@ -19,14 +19,14 @@ private_endpoint_subnet_prefix = "10.0.3.0/24"
 
 # App Service - Configuración económica para dev
 app_service_plan_sku = {
-  tier     = "PremiumV3"
-  size     = "P1v3"
+  tier     = "Basic"
+  size     = "B1"
   capacity = 1
 }
 
 app_service_instances = 2
 
-# Database - Configuración básica para dev
+# Database - Configuración básica para dev (sin VNet integration)
 mysql_sku_name                 = "B_Standard_B1s"
 mysql_version                  = "8.0.21"
 mysql_storage_gb               = 20

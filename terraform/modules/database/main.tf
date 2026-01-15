@@ -12,8 +12,9 @@ resource "azurerm_mysql_flexible_server" "main" {
   backup_retention_days        = var.mysql_backup_retention_days
   geo_redundant_backup_enabled = var.mysql_geo_redundant_backup
 
-  delegated_subnet_id = var.delegated_subnet_id
-  private_dns_zone_id = var.private_dns_zone_id
+  # Comentado para dev - usar acceso público
+  # delegated_subnet_id = var.delegated_subnet_id
+  # private_dns_zone_id = var.private_dns_zone_id
 
   storage {
     size_gb           = var.mysql_storage_gb
@@ -28,8 +29,6 @@ resource "azurerm_mysql_flexible_server" "main" {
   }
 
   tags = var.tags
-
-  depends_on = [var.private_dns_zone_id]
 }
 
 # MySQL Database

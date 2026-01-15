@@ -12,8 +12,9 @@ resource "azurerm_storage_account" "main" {
   allow_nested_items_to_be_public = false
   enable_https_traffic_only       = true
 
+  # Permitir acceso público para dev - cambiar a Deny en prod
   network_rules {
-    default_action = "Deny"
+    default_action = "Allow"
     bypass         = ["AzureServices"]
   }
 
