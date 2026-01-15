@@ -49,7 +49,7 @@ Terraform-Envia/
 - Azure CLI instalado y autenticado
 - Node.js >= 18.0.0
 
-### Despliegue
+### Despliegue Local
 
 ```bash
 # 1. Inicializar Terraform
@@ -66,6 +66,25 @@ terraform apply -var-file="environments/dev.tfvars"
 cd ../scripts
 ./deploy-app.sh dev
 ```
+
+### Despliegue con GitHub Actions
+
+Para configurar CI/CD automático desde GitHub a Azure:
+
+1. **Configura las credenciales de Azure**:
+   ```bash
+   ./scripts/setup-azure-credentials.sh
+   ```
+
+2. **Agrega los secrets en GitHub**:
+   - Ve a: `Settings` > `Secrets and variables` > `Actions`
+   - Agrega: `AZURE_CREDENTIALS`, `ARM_CLIENT_ID`, `ARM_CLIENT_SECRET`, `ARM_SUBSCRIPTION_ID`, `ARM_TENANT_ID`
+
+3. **Despliega automáticamente**:
+   - Push a `main` para despliegue automático
+   - O ejecuta el workflow manualmente desde `Actions`
+
+📖 **Guía completa**: [Configuración GitHub-Azure](docs/github-azure-setup.md)
 
 ## 🔐 Mejoras de Seguridad Implementadas
 
@@ -89,7 +108,8 @@ cd ../scripts
 
 ## 📚 Documentación Adicional
 
+- [Configuración GitHub-Azure](docs/github-azure-setup.md) - CI/CD con GitHub Actions
 - [Guía de Despliegue](docs/deployment-guide.md)
 - [Arquitectura Detallada](docs/architecture.md)
-- [Guía de Seguridad](docs/security-guide.md)
-- [Troubleshooting](docs/troubleshooting.md)
+- [Guía de Migración desde Bicep](docs/migration-guide.md)
+- [Bicep vs Terraform](docs/bicep-vs-terraform.md)
