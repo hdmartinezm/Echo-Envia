@@ -153,5 +153,5 @@ module "gateway" {
 
   # Certificado SSL
   ssl_certificate_data        = var.ssl_certificate_path != "" ? filebase64(var.ssl_certificate_path) : base64encode(tls_self_signed_cert.app_gateway[0].cert_pem)
-  ssl_certificate_password    = var.ssl_certificate_path != "" ? var.ssl_certificate_password : ""
+  ssl_certificate_password    = var.ssl_certificate_path != "" ? nonsensitive(var.ssl_certificate_password) : ""
 }
