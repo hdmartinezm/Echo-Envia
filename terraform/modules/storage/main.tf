@@ -1,6 +1,6 @@
 # Storage Account
 resource "azurerm_storage_account" "main" {
-  name                     = lower(replace("st${var.project_name}${var.environment}", "-", ""))
+  name                     = lower(replace("st${var.project_name}${var.environment}${formatdate("MMDDhhmm", timestamp())}", "-", ""))
   resource_group_name      = var.resource_group_name
   location                 = var.location
   account_tier             = var.account_tier
@@ -18,19 +18,11 @@ resource "azurerm_storage_account" "main" {
     bypass         = ["AzureServices"]
   }
 
-  blob_properties {
-    versioning_enabled = true
-    
-    delete_retention_policy {
-      days = 7
-    }
-
-    container_delete_retention_policy {
-      days = 7
-    }
-  }
-
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [name]  # Ignorar cambios en el nombre después de la creación
+  }
 }
 
 # Blob Container para aplicación

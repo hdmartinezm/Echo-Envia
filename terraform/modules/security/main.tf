@@ -3,7 +3,7 @@ data "azurerm_client_config" "current" {}
 
 # Key Vault
 resource "azurerm_key_vault" "main" {
-  name                       = "kv-${var.project_name}-${var.environment}"
+  name                       = "kv-${var.project_name}-${var.environment}-${formatdate("MMDDhhmm", timestamp())}"
   location                   = var.location
   resource_group_name        = var.resource_group_name
   tenant_id                  = data.azurerm_client_config.current.tenant_id
@@ -37,6 +37,10 @@ resource "azurerm_key_vault" "main" {
   }
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [name]  # Ignorar cambios en el nombre después de la creación
+  }
 }
 
 # Secreto: MySQL Admin Password
