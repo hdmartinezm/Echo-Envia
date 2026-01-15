@@ -74,7 +74,7 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
       - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: tfplan
           path: ${{ env.WORKING_DIRECTORY }}/tfplan
@@ -102,7 +102,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Download Terraform Plan
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: tfplan
           path: ${{ env.WORKING_DIRECTORY }}
@@ -125,7 +125,7 @@ jobs:
         run: terraform output -json > outputs.json
 
       - name: Upload Terraform Outputs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-outputs
           path: ${{ env.WORKING_DIRECTORY }}/outputs.json
