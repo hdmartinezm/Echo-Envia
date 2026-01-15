@@ -54,7 +54,7 @@ resource "azurerm_mysql_flexible_server_configuration" "max_connections" {
   name                = "max_connections"
   resource_group_name = var.resource_group_name
   server_name         = azurerm_mysql_flexible_server.main.name
-  value               = "200"
+  value               = "100"  # Valor válido para B1s (10-171)
 }
 
 resource "azurerm_mysql_flexible_server_configuration" "slow_query_log" {
