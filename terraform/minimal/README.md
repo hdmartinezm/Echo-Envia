@@ -2,6 +2,8 @@
 
 Esta es una configuración simplificada de Terraform que evita los bugs del provider AzureRM 3.85.0.
 
+**IMPORTANTE**: Ejecuta el workflow "Terraform Minimal Deploy" desde GitHub Actions, no el workflow principal.
+
 ## Recursos Incluidos
 
 - ✅ Resource Group
