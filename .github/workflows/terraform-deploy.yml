@@ -1,21 +1,22 @@
-name: Terraform Deploy to Azure
+name: Terraform Deploy to Azure (DISABLED - Use Minimal Deploy)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'terraform/**'
-      - '.github/workflows/terraform-deploy.yml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'terraform/**'
+  # Temporalmente deshabilitado - usar "Terraform Minimal Deploy"
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'terraform/**'
+  #     - '.github/workflows/terraform-deploy.yml'
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'terraform/**'
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy'
+        description: 'Environment to deploy (USE MINIMAL DEPLOY INSTEAD)'
         required: true
         default: 'dev'
         type: choice
@@ -30,11 +31,17 @@ env:
 
 jobs:
   terraform-deploy:
-    name: Terraform Plan and Apply
+    name: Terraform Plan and Apply (USE MINIMAL DEPLOY INSTEAD)
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'dev' }}
     
     steps:
+      - name: ⚠️ WARNING - Use Minimal Deploy Instead
+        run: |
+          echo "⚠️  WARNING: This workflow has known issues with provider bugs"
+          echo "🔄 Please use 'Terraform Minimal Deploy' workflow instead"
+          echo "📍 Go to Actions > Terraform Minimal Deploy > Run workflow"
+          exit 1
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -63,7 +70,6 @@ jobs:
 
       - name: Terraform Plan
         working-directory: ${{ env.WORKING_DIRECTORY }}
-        timeout-minutes: 15
         run: |
           terraform plan \
             -var-file="environments/dev-simple.tfvars" \
@@ -77,7 +83,6 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         working-directory: ${{ env.WORKING_DIRECTORY }}
-        timeout-minutes: 20
         run: terraform apply -auto-approve tfplan
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
