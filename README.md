@@ -1,115 +1,171 @@
-# Proyecto Azure con Terraform - Envia
+# Echo Envia — Azure Infrastructure
 
-Implementación completa de arquitectura web en Azure usando Terraform con mejoras de seguridad y alta disponibilidad.
+Infrastructure and deployment scripts for the **Echo Envia** admin panel (Laravel + Filament) on Azure.
 
-## 🏗️ Arquitectura
+The application code lives in a separate repository. This repo contains:
+- Azure infrastructure (Terraform)
+- Deployment and configuration scripts
+- Operations runbooks
 
-### Componentes Principales
+---
 
-- **Application Gateway v2** con WAF (OWASP 3.2) y certificado SSL
-- **App Services** (2 instancias) con integración VNet
-- **MySQL Flexible Server** con alta disponibilidad zone-redundant
-- **Azure Key Vault** para gestión de secretos
-- **Storage Account** con acceso privado
-- **Private Endpoints** para conectividad segura
-- **Private DNS Zones** para resolución interna
+## Stack
 
-## 📁 Estructura del Proyecto
+| Component | Technology |
+|---|---|
+| Application | PHP 8.3 / Laravel 11 / Filament (Dockerized) |
+| Container Registry | Azure Container Registry (ACR) |
+| Hosting | Azure App Service (Linux Container) |
+| Database | Azure MySQL Flexible Server 8.0 |
+| Cache / Queue | Azure Redis Cache (TLS, port 6380) |
+| Auth (ACR pull) | Managed Identity (AcrPull role) |
 
-```
-Terraform-Envia/
-├── terraform/
-│   ├── main.tf                 # Configuración principal
-│   ├── variables.tf            # Variables de entrada
-│   ├── outputs.tf              # Outputs del despliegue
-│   ├── providers.tf            # Configuración de providers
-│   ├── modules/
-│   │   ├── networking/         # VNet, subnets, NSGs
-│   │   ├── compute/            # App Services
-│   │   ├── database/           # MySQL Flexible Server
-│   │   ├── security/           # Key Vault, Private Endpoints
-│   │   ├── gateway/            # Application Gateway
-│   │   └── storage/            # Storage Account
-│   ├── environments/
-│   │   ├── dev.tfvars
-│   │   ├── staging.tfvars
-│   │   └── prod.tfvars
-│   └── backend.tf              # Backend remoto (Azure Storage)
-├── src/                        # Código de la aplicación
-├── scripts/                    # Scripts de automatización
-└── docs/                       # Documentación
+---
 
-```
+## Active Resources (Dev)
 
-## 🚀 Inicio Rápido
+| Resource | Name |
+|---|---|
+| Resource Group | rg_delivery2 |
+| App Services | app-echo-envia-dev-1, app-echo-envia-dev-2 |
+| Container Registry | acrechoenviadevb4ab45f0.azurecr.io |
+| MySQL Server | mysql-echo-envia-dev-a074ba49.mysql.database.azure.com |
+| Redis | redis-echo-envia-dev.redis.cache.windows.net:6380 |
+| Database | envia_delivery |
+| DB User | echoadmin |
 
-### Prerrequisitos
+---
 
-- Terraform >= 1.6.0
-- Azure CLI instalado y autenticado
-- Node.js >= 18.0.0
+## Initial Setup
 
-### Despliegue Local
-
+### 1. Infrastructure
 ```bash
-# 1. Inicializar Terraform
-cd terraform
-terraform init
+# Register required Azure providers (once per subscription)
+bash scripts/register-azure-providers.sh
 
-# 2. Planificar despliegue (dev)
-terraform plan -var-file="environments/dev.tfvars"
+# Set up GitHub Actions credentials
+bash scripts/setup-azure-credentials.sh
 
-# 3. Aplicar infraestructura
-terraform apply -var-file="environments/dev.tfvars"
-
-# 4. Desplegar aplicación
-cd ../scripts
-./deploy-app.sh dev
+# Deploy infrastructure via GitHub Actions
+# → .github/workflows/terraform-minimal.yml
 ```
 
-### Despliegue con GitHub Actions
+### 2. Database Setup
+```bash
+# Creates envia_delivery database and echoadmin user
+DB_PASSWORD="your_password" bash scripts/setup-database.sh
+```
 
-Para configurar CI/CD automático desde GitHub a Azure:
+### 3. Managed Identity (ACR Access)
+```bash
+# Run ONCE - grants App Services permission to pull from ACR
+# Requires Owner or User Access Administrator role
+bash scripts/setup-managed-identity.sh
+```
 
-1. **Configura las credenciales de Azure**:
-   ```bash
-   ./scripts/setup-azure-credentials.sh
-   ```
+### 4. Configure App Settings
+```bash
+# Sets all required environment variables in both App Services
+# Uses Python to avoid bash shell escaping issues with special characters
+DB_PASSWORD="your_password" APP_KEY="base64:xxx..." python3 scripts/configure-app-settings.py
+```
 
-2. **Agrega los secrets en GitHub**:
-   - Ve a: `Settings` > `Secrets and variables` > `Actions`
-   - Agrega: `AZURE_CREDENTIALS`, `ARM_CLIENT_ID`, `ARM_CLIENT_SECRET`, `ARM_SUBSCRIPTION_ID`, `ARM_TENANT_ID`
+---
 
-3. **Despliega automáticamente**:
-   - Push a `main` para despliegue automático
-   - O ejecuta el workflow manualmente desde `Actions`
+## Deployment
 
-📖 **Guía completa**: [Configuración GitHub-Azure](docs/github-azure-setup.md)
+### Build & Push Image
+The application Dockerfile lives in the app repo. After a successful build:
+```bash
+# Tag and push to ACR (done by CI/CD in the app repo)
+az acr login --name acrechoenviadevb4ab45f0
+docker build -t acrechoenviadevb4ab45f0.azurecr.io/echo-envia-app:74 .
+docker push acrechoenviadevb4ab45f0.azurecr.io/echo-envia-app:74
+```
 
-## 🔐 Mejoras de Seguridad Implementadas
+> **Do NOT use the `:latest` tag** — Azure App Service cannot pull OCI multi-platform manifests. Always use a specific numeric tag (e.g., `:74`).
 
-1. **Secretos en Key Vault**: Contraseñas y credenciales almacenadas de forma segura
-2. **Certificados SSL**: HTTPS obligatorio con certificados gestionados
-3. **Network Security Groups**: Reglas de firewall granulares
-4. **Private Endpoints**: Toda la comunicación interna por red privada
-5. **Managed Identities**: Autenticación sin credenciales hardcodeadas
-6. **WAF**: Protección contra OWASP Top 10
+### Restart App Services
+```bash
+az webapp restart --name app-echo-envia-dev-1 --resource-group rg_delivery2
+az webapp restart --name app-echo-envia-dev-2 --resource-group rg_delivery2
+```
 
-## 💰 Estimación de Costos
+---
 
-| Recurso | SKU | Costo Mensual (USD) |
-|---------|-----|---------------------|
-| App Service Plan | P1v3 | ~$73 |
-| MySQL Flexible Server | Standard_B2s | ~$50 |
-| Application Gateway | WAF_v2 | ~$125 |
-| Storage Account | Standard_LRS | ~$5 |
-| Key Vault | Standard | ~$1 |
-| **Total Estimado** | | **~$254/mes** |
+## Known Issues & Solutions
 
-## 📚 Documentación Adicional
+### DB_PASSWORD corruption (bash `!` history expansion)
+Never set `DB_PASSWORD` via bash if the password contains `!`. Use the Python script instead:
+```bash
+# WRONG — bash corrupts passwords with ! character
+az webapp config appsettings set ... --settings DB_PASSWORD="Y&j9!pass"
 
-- [Configuración GitHub-Azure](docs/github-azure-setup.md) - CI/CD con GitHub Actions
-- [Guía de Despliegue](docs/deployment-guide.md)
-- [Arquitectura Detallada](docs/architecture.md)
-- [Guía de Migración desde Bicep](docs/migration-guide.md)
-- [Bicep vs Terraform](docs/bicep-vs-terraform.md)
+# CORRECT — use configure-app-settings.py
+DB_PASSWORD="Y&j9!pass" python3 scripts/configure-app-settings.py
+```
+
+### Redis TLS requirement
+Azure Redis Cache requires TLS on port 6380. The `REDIS_HOST` must have the `tls://` prefix:
+```
+REDIS_HOST=tls://redis-echo-envia-dev.redis.cache.windows.net
+REDIS_PORT=6380
+```
+
+### Image tag `:latest` fails
+Use specific numeric tags. The `:latest` tag points to an OCI multi-platform manifest that Azure App Service cannot pull.
+
+### APP_KEY missing
+Laravel requires `APP_KEY` in Azure App Settings. The `.env` file is excluded from the Docker image via `.dockerignore`. Set it via `configure-app-settings.py`.
+
+---
+
+## Scripts Reference
+
+| Script | Purpose |
+|---|---|
+| `scripts/configure-app-settings.py` | Set all Azure App Service environment variables |
+| `scripts/setup-managed-identity.sh` | Grant AcrPull role to App Service identities |
+| `scripts/setup-database.sh` | Create MySQL database and application user |
+| `scripts/database/init.sql` | SQL for database/user creation |
+| `scripts/setup-azure-credentials.sh` | Create Service Principal for GitHub Actions |
+| `scripts/register-azure-providers.sh` | Register required Azure resource providers |
+| `scripts/deploy-infrastructure.sh` | Deploy Terraform infrastructure |
+| `scripts/cleanup-resources.sh` | Remove Azure resources |
+
+---
+
+## Required App Settings
+
+All of these must be set in Azure App Service (via `configure-app-settings.py`):
+
+```
+APP_KEY                         base64:...  (Laravel encryption key)
+APP_ENV                         production
+APP_DEBUG                       false
+APP_URL                         https://<app-name>.azurewebsites.net
+DB_CONNECTION                   mysql
+DB_HOST                         mysql-echo-envia-dev-a074ba49.mysql.database.azure.com
+DB_PORT                         3306
+DB_DATABASE                     envia_delivery
+DB_USERNAME                     echoadmin
+DB_PASSWORD                     <from secrets>
+REDIS_HOST                      tls://redis-echo-envia-dev.redis.cache.windows.net
+REDIS_PASSWORD                  <from Azure Redis>
+REDIS_PORT                      6380
+REDIS_CLIENT                    phpredis
+REDIS_DB                        0
+REDIS_CACHE_DB                  1
+REDIS_SESSION_DB                2
+REDIS_QUEUE_DB                  3
+CACHE_STORE                     redis
+CACHE_PREFIX                    envia-delivery-cache-
+SESSION_DRIVER                  redis
+SESSION_CONNECTION              session
+SESSION_LIFETIME                120
+QUEUE_CONNECTION                redis
+REDIS_QUEUE_CONNECTION          queue
+REDIS_QUEUE                     default
+RUN_MIGRATIONS                  false
+WEBSITES_ENABLE_APP_SERVICE_STORAGE  false
+```
