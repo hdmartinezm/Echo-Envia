@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "Nombre del proyecto"
   type        = string
-  default     = "envia"
+  default     = "echo-envia"
 }
 
 variable "environment" {
@@ -22,7 +22,14 @@ variable "location" {
 variable "tags" {
   description = "Tags comunes para todos los recursos"
   type        = map(string)
-  default     = {}
+  default = {
+    Environment = "Development"
+    Project     = "Echo-Envia"
+    Owner       = "Echo Technologies"
+    ManagedBy   = "Terraform"
+    Solution    = "Shipping Platform"
+    CostCenter  = "Engineering"
+  }
 }
 
 # Networking
@@ -118,7 +125,19 @@ variable "mysql_admin_username" {
 variable "mysql_database_name" {
   description = "Nombre de la base de datos"
   type        = string
-  default     = "enviadb"
+  default     = "envia_delivery"
+}
+
+variable "app_key" {
+  description = "Laravel APP_KEY (base64 encoded)"
+  type        = string
+  sensitive   = true
+}
+
+variable "db_password" {
+  description = "Contraseña del administrador de MySQL"
+  type        = string
+  sensitive   = true
 }
 
 # Application Gateway

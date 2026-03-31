@@ -31,6 +31,9 @@ yarn.lock
 .env.*.local
 *.env
 
+# Terraform sensitive values (nunca subir al repo)
+*.secret.tfvars
+
 # Logs
 logs/
 *.log
