@@ -1,10 +1,10 @@
 terraform {
-  required_version = ">= 1.6.0"
+  required_version = ">= 1.5.0"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.80.0"  # Downgrade a versión más estable
+      version = "~> 3.70.0"  # Versión más estable, sin el bug de inconsistent result
     }
     random = {
       source  = "hashicorp/random"
@@ -17,6 +17,10 @@ terraform {
     time = {
       source  = "hashicorp/time"
       version = "~> 0.10.0"
+    }
+    pkcs12 = {
+      source  = "chilicat/pkcs12"
+      version = "~> 0.0.7"
     }
   }
 }

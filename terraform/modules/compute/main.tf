@@ -48,7 +48,6 @@ resource "azurerm_linux_web_app" "main" {
     var.app_settings,
     {
       "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
-      "WEBSITE_HTTPLOGGING_RETENTION_DAYS"  = "7"
       "APPINSIGHTS_INSTRUMENTATIONKEY"      = azurerm_application_insights.main.instrumentation_key
       "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
     }

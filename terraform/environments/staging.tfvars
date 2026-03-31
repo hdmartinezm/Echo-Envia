@@ -1,14 +1,18 @@
-# Configuración para entorno de staging
+# Echo-Envia - Configuración para Staging
+# Entorno de pre-producción con configuración similar a producción
 
-project_name = "envia"
+project_name = "echo-envia"
 environment  = "staging"
 location     = "East US"
 
 tags = {
   Environment = "Staging"
-  Project     = "Envia"
+  Project     = "Echo-Envia"
+  Owner       = "Echo Technologies"
   ManagedBy   = "Terraform"
+  Solution    = "Shipping Platform"
   CostCenter  = "Engineering"
+  Team        = "DevOps"
 }
 
 # Networking
@@ -17,7 +21,7 @@ app_gateway_subnet_prefix      = "10.1.1.0/24"
 app_service_subnet_prefix      = "10.1.2.0/24"
 private_endpoint_subnet_prefix = "10.1.3.0/24"
 
-# App Service
+# App Service - Configuración intermedia
 app_service_plan_sku = {
   tier     = "PremiumV3"
   size     = "P1v3"
@@ -26,17 +30,17 @@ app_service_plan_sku = {
 
 app_service_instances = 2
 
-# Database - Con alta disponibilidad
-mysql_sku_name                 = "B_Standard_B2s"
+# Database - Configuración intermedia con HA
+mysql_sku_name                 = "GP_Standard_D2ds_v4"
 mysql_version                  = "8.0.21"
-mysql_storage_gb               = 50
+mysql_storage_gb               = 100
 mysql_backup_retention_days    = 14
 mysql_geo_redundant_backup     = true
 mysql_high_availability_mode   = "SameZone"
-mysql_admin_username           = "enviaadmin"
-mysql_database_name            = "enviadb"
+mysql_admin_username           = "echoadmin"
+mysql_database_name            = "echo_envia_db"
 
-# Application Gateway
+# Application Gateway - Configuración intermedia
 app_gateway_sku = {
   name     = "WAF_v2"
   tier     = "WAF_v2"
@@ -45,7 +49,7 @@ app_gateway_sku = {
 
 waf_mode = "Prevention"
 
-# Storage
+# Storage - Con geo-redundancia
 storage_account_tier        = "Standard"
 storage_account_replication = "GRS"
 

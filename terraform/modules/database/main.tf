@@ -8,6 +8,7 @@ resource "azurerm_mysql_flexible_server" "main" {
   
   sku_name               = var.mysql_sku_name
   version                = var.mysql_version
+  # Removemos la zona específica para evitar problemas de disponibilidad
 
   backup_retention_days        = var.mysql_backup_retention_days
   geo_redundant_backup_enabled = var.mysql_geo_redundant_backup

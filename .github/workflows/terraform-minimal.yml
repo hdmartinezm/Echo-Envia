@@ -37,6 +37,22 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Clean existing resources (if any)
+        run: |
+          echo "Checking for existing Resource Group..."
+          if az group exists --name "rg-envia-dev" | grep -q "true"; then
+            echo "Resource Group exists, deleting..."
+            az group delete --name "rg-envia-dev" --yes --no-wait
+            echo "Waiting for deletion to complete..."
+            while az group exists --name "rg-envia-dev" | grep -q "true"; do
+              echo "Still deleting..."
+              sleep 10
+            done
+            echo "Resource Group deleted successfully"
+          else
+            echo "No existing Resource Group found"
+          fi
+
       - name: Terraform Init
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: terraform init

@@ -3,7 +3,7 @@ data "azurerm_client_config" "current" {}
 
 # Key Vault
 resource "azurerm_key_vault" "main" {
-  name                       = "kv-${var.project_name}-${var.environment}-${formatdate("MMDDhhmm", timestamp())}"
+  name                       = "kv${replace(var.project_name, "-", "")}${var.environment}${formatdate("MMDDhhmm", timestamp())}"
   location                   = var.location
   resource_group_name        = var.resource_group_name
   tenant_id                  = data.azurerm_client_config.current.tenant_id

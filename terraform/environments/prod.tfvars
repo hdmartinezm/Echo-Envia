@@ -1,14 +1,19 @@
-# Configuración para entorno de producción
+# Echo-Envia - Configuración para Producción
+# Entorno de producción con alta disponibilidad y máxima seguridad
 
-project_name = "envia"
+project_name = "echo-envia"
 environment  = "prod"
 location     = "East US"
 
 tags = {
   Environment = "Production"
-  Project     = "Envia"
+  Project     = "Echo-Envia"
+  Owner       = "Echo Technologies"
   ManagedBy   = "Terraform"
-  CostCenter  = "Operations"
+  Solution    = "Shipping Platform"
+  CostCenter  = "Engineering"
+  Team        = "DevOps"
+  Criticality = "High"
 }
 
 # Networking
@@ -26,15 +31,15 @@ app_service_plan_sku = {
 
 app_service_instances = 3
 
-# Database - Configuración completa con HA
-mysql_sku_name                 = "GP_Standard_D2ds_v4"
+# Database - Configuración de producción con HA completa
+mysql_sku_name                 = "GP_Standard_D4ds_v4"
 mysql_version                  = "8.0.21"
-mysql_storage_gb               = 100
+mysql_storage_gb               = 200
 mysql_backup_retention_days    = 35
 mysql_geo_redundant_backup     = true
 mysql_high_availability_mode   = "ZoneRedundant"
-mysql_admin_username           = "enviaadmin"
-mysql_database_name            = "enviadb"
+mysql_admin_username           = "echoadmin"
+mysql_database_name            = "echo_envia_db"
 
 # Application Gateway - Configuración de producción
 app_gateway_sku = {
@@ -45,7 +50,7 @@ app_gateway_sku = {
 
 waf_mode = "Prevention"
 
-# Storage - Con geo-redundancia
+# Storage - Con geo-redundancia y zona redundante
 storage_account_tier        = "Standard"
 storage_account_replication = "GZRS"
 

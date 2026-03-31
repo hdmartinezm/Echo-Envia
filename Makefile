@@ -1,141 +1,86 @@
-.PHONY: help init plan apply destroy deploy-app clean validate fmt
+# Echo-Envia Infrastructure Makefile
+# Comandos para gestionar la infraestructura de la plataforma de envíos
+
+.PHONY: help init plan apply destroy clean validate fmt docs
 
 # Variables
+TERRAFORM_DIR := terraform
 ENV ?= dev
-TERRAFORM_DIR = terraform
-SCRIPTS_DIR = scripts
+TFVARS_FILE := environments/$(ENV).tfvars
 
-# Colors
-BLUE := \033[0;34m
-GREEN := \033[0;32m
-YELLOW := \033[1;33m
-NC := \033[0m
-
-help: ## Mostrar esta ayuda
-	@echo "$(BLUE)Comandos disponibles:$(NC)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+help: ## Mostrar ayuda
+	@echo "Echo-Envia Infrastructure Management"
+	@echo "===================================="
 	@echo ""
-	@echo "$(YELLOW)Uso:$(NC)"
-	@echo "  make <comando> ENV=<environment>"
-	@echo ""
-	@echo "$(YELLOW)Ejemplos:$(NC)"
-	@echo "  make plan ENV=dev"
-	@echo "  make apply ENV=staging"
-	@echo "  make deploy-app ENV=prod"
+	@echo "Comandos disponibles:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 init: ## Inicializar Terraform
-	@echo "$(BLUE)Inicializando Terraform...$(NC)"
-	cd $(TERRAFORM_DIR) && terraform init -upgrade
+	@echo "🚀 Inicializando Terraform para Echo-Envia..."
+	cd $(TERRAFORM_DIR) && terraform init
 
 validate: ## Validar configuración de Terraform
-	@echo "$(BLUE)Validando configuración...$(NC)"
+	@echo "✅ Validando configuración de Terraform..."
 	cd $(TERRAFORM_DIR) && terraform validate
 
 fmt: ## Formatear archivos de Terraform
-	@echo "$(BLUE)Formateando archivos...$(NC)"
+	@echo "🎨 Formateando archivos de Terraform..."
 	cd $(TERRAFORM_DIR) && terraform fmt -recursive
 
-plan: init validate ## Generar plan de ejecución
-	@echo "$(BLUE)Generando plan para $(ENV)...$(NC)"
-	cd $(SCRIPTS_DIR) && ./deploy-infrastructure.sh $(ENV) plan
+plan: ## Planificar cambios (ENV=dev|staging|prod)
+	@echo "📋 Planificando despliegue para entorno: $(ENV)"
+	cd $(TERRAFORM_DIR) && terraform plan -var-file="$(TFVARS_FILE)" -out=tfplan-$(ENV)
 
-apply: ## Aplicar cambios de infraestructura
-	@echo "$(BLUE)Aplicando cambios para $(ENV)...$(NC)"
-	cd $(SCRIPTS_DIR) && ./deploy-infrastructure.sh $(ENV) apply
+apply: ## Aplicar cambios (ENV=dev|staging|prod)
+	@echo "🚀 Desplegando infraestructura para entorno: $(ENV)"
+	cd $(TERRAFORM_DIR) && terraform apply -var-file="$(TFVARS_FILE)" -auto-approve
 
-destroy: ## Destruir infraestructura
-	@echo "$(YELLOW)⚠️  Destruyendo infraestructura de $(ENV)...$(NC)"
-	cd $(SCRIPTS_DIR) && ./deploy-infrastructure.sh $(ENV) destroy
+apply-plan: ## Aplicar plan específico (ENV=dev|staging|prod)
+	@echo "🚀 Aplicando plan para entorno: $(ENV)"
+	cd $(TERRAFORM_DIR) && terraform apply tfplan-$(ENV)
 
-deploy-app: ## Desplegar aplicación
-	@echo "$(BLUE)Desplegando aplicación a $(ENV)...$(NC)"
-	cd $(SCRIPTS_DIR) && ./deploy-app.sh $(ENV)
+destroy: ## Destruir infraestructura (ENV=dev|staging|prod)
+	@echo "🗑️ Destruyendo infraestructura para entorno: $(ENV)"
+	@echo "⚠️  Esta acción es irreversible. Presiona Ctrl+C para cancelar."
+	@sleep 5
+	cd $(TERRAFORM_DIR) && terraform destroy -var-file="$(TFVARS_FILE)" -auto-approve
 
-deploy-all: apply deploy-app ## Desplegar infraestructura y aplicación
-	@echo "$(GREEN)✓ Despliegue completo finalizado$(NC)"
-
-outputs: ## Mostrar outputs de Terraform
-	@echo "$(BLUE)Outputs de $(ENV):$(NC)"
+output: ## Mostrar outputs de Terraform
+	@echo "📊 Outputs de Terraform:"
 	cd $(TERRAFORM_DIR) && terraform output
 
-outputs-json: ## Mostrar outputs en formato JSON
-	cd $(TERRAFORM_DIR) && terraform output -json
-
 clean: ## Limpiar archivos temporales
-	@echo "$(BLUE)Limpiando archivos temporales...$(NC)"
-	find . -name "*.zip" -type f -delete
-	find . -name "*.tfplan" -type f -delete
-	find . -name "outputs-*.json" -type f -delete
-	@echo "$(GREEN)✓ Limpieza completada$(NC)"
+	@echo "🧹 Limpiando archivos temporales..."
+	find $(TERRAFORM_DIR) -name "*.tfplan" -delete
+	find $(TERRAFORM_DIR) -name "tfplan-*" -delete
+	find . -name ".DS_Store" -delete
 
-logs: ## Ver logs de App Service
-	@echo "$(BLUE)Logs de App Service en $(ENV):$(NC)"
-	@APP_NAME=$$(cd $(TERRAFORM_DIR) && terraform output -json app_service_names | jq -r '.[0]') && \
-	az webapp log tail --name $$APP_NAME --resource-group rg-envia-$(ENV)
+# Comandos de desarrollo
+dev-init: ## Inicializar entorno de desarrollo
+	@echo "🔧 Configurando entorno de desarrollo..."
+	$(MAKE) init
+	$(MAKE) validate
+	$(MAKE) fmt
 
-health: ## Verificar health de la aplicación
-	@echo "$(BLUE)Verificando health de $(ENV):$(NC)"
-	@GATEWAY_IP=$$(cd $(TERRAFORM_DIR) && terraform output -raw app_gateway_public_ip) && \
-	curl -s https://$$GATEWAY_IP/health | jq
+dev-deploy: ## Desplegar entorno de desarrollo
+	$(MAKE) plan ENV=dev
+	$(MAKE) apply-plan ENV=dev
 
-test-api: ## Probar API
-	@echo "$(BLUE)Probando API de $(ENV):$(NC)"
-	@GATEWAY_IP=$$(cd $(TERRAFORM_DIR) && terraform output -raw app_gateway_public_ip) && \
-	echo "Health:" && curl -s https://$$GATEWAY_IP/health | jq && \
-	echo "\nAPI Info:" && curl -s https://$$GATEWAY_IP/api/ | jq
+dev-destroy: ## Destruir entorno de desarrollo
+	$(MAKE) destroy ENV=dev
 
-install-deps: ## Instalar dependencias de la aplicación
-	@echo "$(BLUE)Instalando dependencias...$(NC)"
+# Comandos de aplicación
+app-build: ## Construir aplicación Node.js
+	@echo "📦 Construyendo aplicación Echo-Envia..."
 	cd src && npm install
 
-test: ## Ejecutar tests de la aplicación
-	@echo "$(BLUE)Ejecutando tests...$(NC)"
-	cd src && npm test
+app-start: ## Iniciar aplicación localmente
+	@echo "🚀 Iniciando Echo-Envia API..."
+	cd src && npm start
 
-dev: ## Ejecutar aplicación en modo desarrollo
-	@echo "$(BLUE)Iniciando servidor de desarrollo...$(NC)"
+app-dev: ## Iniciar aplicación en modo desarrollo
+	@echo "🔧 Iniciando Echo-Envia API en modo desarrollo..."
 	cd src && npm run dev
 
-# Comandos de Azure CLI
-az-login: ## Login en Azure
-	az login
-
-az-account: ## Mostrar cuenta actual de Azure
-	az account show
-
-az-list-resources: ## Listar recursos del environment
-	@echo "$(BLUE)Recursos en $(ENV):$(NC)"
-	az resource list --resource-group rg-envia-$(ENV) --output table
-
-az-costs: ## Mostrar costos estimados
-	@echo "$(BLUE)Costos de $(ENV):$(NC)"
-	az consumption usage list --resource-group rg-envia-$(ENV) --output table
-
-# Comandos de base de datos
-db-connect: ## Conectar a MySQL
-	@echo "$(BLUE)Conectando a MySQL de $(ENV)...$(NC)"
-	@MYSQL_HOST=$$(cd $(TERRAFORM_DIR) && terraform output -raw mysql_server_fqdn) && \
-	MYSQL_USER=$$(cd $(TERRAFORM_DIR) && terraform output -raw mysql_admin_username) && \
-	KEY_VAULT=$$(cd $(TERRAFORM_DIR) && terraform output -raw key_vault_name) && \
-	MYSQL_PASS=$$(az keyvault secret show --vault-name $$KEY_VAULT --name mysql-admin-password --query value -o tsv) && \
-	mysql -h $$MYSQL_HOST -u $$MYSQL_USER -p$$MYSQL_PASS
-
-db-init: ## Inicializar base de datos
-	@echo "$(BLUE)Inicializando base de datos de $(ENV)...$(NC)"
-	@MYSQL_HOST=$$(cd $(TERRAFORM_DIR) && terraform output -raw mysql_server_fqdn) && \
-	MYSQL_USER=$$(cd $(TERRAFORM_DIR) && terraform output -raw mysql_admin_username) && \
-	KEY_VAULT=$$(cd $(TERRAFORM_DIR) && terraform output -raw key_vault_name) && \
-	MYSQL_PASS=$$(az keyvault secret show --vault-name $$KEY_VAULT --name mysql-admin-password --query value -o tsv) && \
-	mysql -h $$MYSQL_HOST -u $$MYSQL_USER -p$$MYSQL_PASS < $(SCRIPTS_DIR)/database/init.sql
-
-# Comandos de monitoreo
-monitor-app: ## Abrir Application Insights en el portal
-	@echo "$(BLUE)Abriendo Application Insights...$(NC)"
-	az portal open --resource-group rg-envia-$(ENV) --resource-type Microsoft.Insights/components
-
-monitor-gateway: ## Ver health del Application Gateway
-	@echo "$(BLUE)Health del Application Gateway:$(NC)"
-	az network application-gateway show-backend-health \
-		--name appgw-envia-$(ENV) \
-		--resource-group rg-envia-$(ENV) \
-		--output table
+# Default target
+.DEFAULT_GOAL := help
